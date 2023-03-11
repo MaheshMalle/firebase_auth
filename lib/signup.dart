@@ -1,23 +1,30 @@
 import 'dart:math';
+import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_authentication/andhar.dart';
-import 'package:firebase_authentication/signup.dart';
+import 'package:firebase_authentication/home.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:email_validator/email_validator.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+import 'andhar.dart';
+
+class signup extends StatefulWidget {
+  const signup({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<signup> createState() => _signupState();
 }
 
-class _LoginState extends State<Login> {
+class _signupState extends State<signup> {
+  bool loading = false;
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +33,6 @@ class _LoginState extends State<Login> {
       appBar: AppBar(
         title: Text("Firebase Auth"),
         backgroundColor: Colors.grey,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => signup(),
-              ),
-            );
-          },
-        ),
       ),
       body: Form(
         key: _formKey,
@@ -45,7 +41,7 @@ class _LoginState extends State<Login> {
             height: 200,
             width: 400,
             child: const Text(
-              "Login",
+              "Sign Up",
               style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
             ),
             alignment: Alignment.center,
@@ -64,7 +60,9 @@ class _LoginState extends State<Login> {
                       color: Colors.grey,
                     )),
                 child: TextFormField(
-                  decoration: const InputDecoration(
+                  keyboardType: TextInputType.emailAddress,
+                  controller: emailController,
+                  decoration: InputDecoration(
                     contentPadding: EdgeInsets.all(0),
                     prefixIcon: Icon(
                       Icons.mail_outline_outlined,
@@ -98,6 +96,8 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 child: TextFormField(
+                  keyboardType: TextInputType.text,
+                  controller: passwordController,
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.all(0),
                     prefixIcon: Icon(
@@ -123,6 +123,69 @@ class _LoginState extends State<Login> {
                   },
                 ),
               ),
+              SizedBox(
+                height: 20,
+              ),
+              Stack(children: <Widget>[
+                Container(
+                    padding: EdgeInsets.symmetric(horizontal: 5),
+                    // margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() {
+                            loading = true;
+                          });
+                          _auth
+                              .createUserWithEmailAndPassword(
+                                  email: emailController.text.toString(),
+                                  password: passwordController.text.toString())
+                              .then((value) {
+                            setState(() {
+                              loading = false;
+                            });
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => andhar(),
+                              ),
+                            );
+                          }).onError((error, stackTrace) {
+                            setState(() {
+                              loading = false;
+                            });
+                            Fluttertoast.showToast(
+                              msg: "Error: Something went wrong",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                              fontSize: 16.0,
+                            );
+                          });
+                        }
+                      },
+                      child: Text("Sign Up"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    )),
+                Visibility(
+                  visible: loading,
+                  child: Container(
+                    alignment: Alignment.center,
+                    color: Colors.white.withOpacity(0.8),
+                    child: SpinKitCircle(
+                      color: Colors.blue,
+                      size: 50.0,
+                    ),
+                  ),
+                ),
+              ]),
               Row(
                 children: [
                   Expanded(
@@ -131,36 +194,20 @@ class _LoginState extends State<Login> {
                       child: Container(
                           // margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
                           child: TextButton(
-                        onPressed: () {},
-                        child: Text("Forgot Password?"),
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Login(),
+                            ),
+                          );
+                        },
+                        child: Text("Already Have an account?"),
                       )),
                     ),
                   ),
                 ],
               ),
-              Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  // margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => andhar(),
-                          ),
-                        );
-                      }
-                    },
-                    child: Text("Login"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ))
             ]),
           )
         ]),
