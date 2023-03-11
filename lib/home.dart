@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -18,6 +20,9 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool loading = false;
+
+  FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +69,7 @@ class _LoginState extends State<Login> {
                       color: Colors.grey,
                     )),
                 child: TextFormField(
+                  controller: emailController,
                   decoration: const InputDecoration(
                     contentPadding: EdgeInsets.all(0),
                     prefixIcon: Icon(
@@ -98,6 +104,7 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 child: TextFormField(
+                  controller: passwordController,
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.all(0),
                     prefixIcon: Icon(
@@ -138,29 +145,69 @@ class _LoginState extends State<Login> {
                   ),
                 ],
               ),
-              Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  // margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => andhar(),
+              Stack(
+                children: [
+                  Container(
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                      // margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              loading = true;
+                            });
+                            _auth
+                                .signInWithEmailAndPassword(
+                                    email: emailController.text.toString(),
+                                    password:
+                                        passwordController.text.toString())
+                                .then((value) {
+                              setState(() {
+                                loading = false;
+                              });
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => andhar(),
+                                ),
+                              );
+                            }).onError((error, stackTrace) {
+                              setState(() {
+                                loading = false;
+                              });
+                              Fluttertoast.showToast(
+                                msg: error.toString(),
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                backgroundColor: Colors.blue,
+                                textColor: Colors.white,
+                                fontSize: 16.0,
+                              );
+                            });
+                          }
+                        },
+                        child: Text("Login"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                        );
-                      }
-                    },
-                    child: Text("Login"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        ),
+                      )),
+                  Visibility(
+                    visible: loading,
+                    child: Container(
+                      alignment: Alignment.center,
+                      color: Colors.white.withOpacity(0.8),
+                      child: SpinKitCircle(
+                        color: Colors.blue,
+                        size: 50.0,
                       ),
                     ),
-                  ))
+                  ),
+                ],
+              )
             ]),
           )
         ]),
